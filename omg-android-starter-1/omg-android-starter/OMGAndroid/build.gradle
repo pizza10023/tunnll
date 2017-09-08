@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 23
@@ -14,4 +15,8 @@ dependencies {
 	compile 'com.android.support:appcompat-v7:23.2.0'
   compile 'com.loopj.android:android-async-http:1.4.4'
   compile 'com.squareup.picasso:picasso:2.1.1'
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+}
+repositories {
+    mavenCentral()
 }
