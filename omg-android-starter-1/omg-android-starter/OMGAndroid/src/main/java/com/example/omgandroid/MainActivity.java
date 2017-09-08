@@ -72,6 +72,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     setProgressBarIndeterminateVisibility(false);
 
+
     setContentView(R.layout.activity_main);
 
     // 1. Access the TextView defined in layout XML
@@ -176,7 +177,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         mJSONAdapter.getItem(position).optString("cover_i", "");
 
     // create an Intent to take you over to a new DetailActivity
-    Intent detailIntent = new Intent(this, DetailActivity.class);
+    Intent detailIntent = new Intent(this, DetailActivityKotlin.class);
 
     // pack away the data about the cover
     // into your Intent before you head out

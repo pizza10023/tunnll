@@ -33,5 +33,13 @@
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value=".MainActivity"/>
         </activity>
+        <activity
+            android:name=".DetailActivityKotlin"
+            android:label="@string/activity_details_kotlin"
+            android:parentActivityName=".MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity"/>
+        </activity>
     </application>
 </manifest>
