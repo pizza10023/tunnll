@@ -25,12 +25,6 @@ import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 
-
-
-
-
-
-
 class MainActivity : AppCompatActivity() {
 
     private val map:MapView by lazy {
@@ -63,9 +57,6 @@ class MainActivity : AppCompatActivity() {
         mapController.setZoom(9)
         val startPoint = GeoPoint(40.1106, -88.2073)
         mapController.setCenter(startPoint)
-        fab.setOnClickListener { view ->
-            moveTaskToBack(true)
-        }
     }
 
     override fun onResume() {
@@ -88,7 +79,8 @@ class MainActivity : AppCompatActivity() {
         val id = item.itemId
 
 
-        return if (id == R.id.action_settings) {
+        return if (id == R.id.action_exit) {
+            moveTaskToBack(true)
             true
         } else super.onOptionsItemSelected(item)
 
