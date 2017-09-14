@@ -21,10 +21,12 @@ import org.osmdroid.api.IMapController
 import android.Manifest.permission
 import android.Manifest.permission.WRITE_CALENDAR
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
 import android.location.LocationManager
 import android.os.Environment
+import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import org.osmdroid.tileprovider.MapTileProviderBasic
 import org.osmdroid.tileprovider.tilesource.XYTileSource
@@ -57,33 +59,53 @@ class MainActivity : AppCompatActivity() {
     private var mLocationOverlay:MyLocationNewOverlay ?=null
     private var compassOverlay:CompassOverlay?=null
     private var mTilesOverlay:TilesOverlay?=null
-    private var mTilesOverlay2:TilesOverlay?=null
+    private var MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE=0
+    private var MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION=0
+    private var MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION=0
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val ctx = applicationContext
 
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
+        //FOR API23 and HIGHER
+        if( ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                !=PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(this,
+                     Array<String>(1){Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE)
+        if( ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                !=PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(this,
+                    Array<String>(1){Manifest.permission.ACCESS_FINE_LOCATION},
+                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+        if( ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION)
+                !=PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(this,
+                    Array<String>(1){Manifest.permission.ACCESS_COARSE_LOCATION},
+                    MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION)
         val sdCard:File = Environment.getExternalStorageDirectory();
         var dir :File = File (sdCard.getAbsolutePath() + "/osmdroid/")
         dir.mkdirs()
         Configuration.getInstance().setOsmdroidBasePath(dir)
 
         setContentView(R.layout.activity_main)
-        val writeCheck = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        val fineLocationCheck = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-        val coarseLocationCheck = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION)
 
 
-        var file:File =  File(dir, "map.mbtiles")
+
+        var file:File =  File(""+dir +"/map.mbtiles")
+        if(!file.exists())
+                file.createNewFile()
         var mapOutput:FileOutputStream = FileOutputStream(file)
         var mapInput=ctx.getAssets().open("map.mbtiles");
         val buffer = ByteArray(mapInput.available())
         mapInput.read(buffer)
         mapOutput.write(buffer)
         var file2:File =  File(dir, "urbana_map.mbtiles")
+        if(!file2.exists())
+            file2.createNewFile()
         var mapOutput2:FileOutputStream = FileOutputStream(file2)
         var mapInput2=ctx.getAssets().open("urbana_map.mbtiles");
         val buffer2 = ByteArray(mapInput2.available())
