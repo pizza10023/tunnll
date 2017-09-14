@@ -21,20 +21,28 @@ import org.osmdroid.api.IMapController
 import android.Manifest.permission
 import android.Manifest.permission.WRITE_CALENDAR
 import android.content.Context
+import android.graphics.Color
 import android.location.Location
 import android.location.LocationManager
+import android.os.Environment
 import android.support.v4.content.ContextCompat
+import org.osmdroid.tileprovider.MapTileProviderBasic
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.ItemizedOverlay
 import org.osmdroid.views.overlay.OverlayItem;
+import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.compass.CompassOverlay
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
 
-    private val MAP_DEFAULT_LATITUDE = 44.445883
-    private val MAP_DEFAULT_LONGITUDE = 26.040963
+    //CURRENT LOCATION: URBANA,IL
+    private val MAP_DEFAULT_LATITUDE = 40.1106
+    private val MAP_DEFAULT_LONGITUDE = -88.2073
 
     private val map:MapView by lazy {
         map_l.setBuiltInZoomControls(true)
@@ -46,16 +54,19 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private var mItemizedOverlay: ItemizedOverlay<OverlayItem>?=null
-    private var lastPosition: OverlayItem? = null
     private var mLocationOverlay:MyLocationNewOverlay ?=null
     private var compassOverlay:CompassOverlay?=null
+    private var mTilesOverlay:TilesOverlay?=null
+    private var mTilesOverlay2:TilesOverlay?=null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val ctx = applicationContext
 
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
-
+        val sdCard:File = Environment.getExternalStorageDirectory();
+        var dir :File = File (sdCard.getAbsolutePath() + "/osmdroid/")
+        dir.mkdirs()
+        Configuration.getInstance().setOsmdroidBasePath(dir)
 
         setContentView(R.layout.activity_main)
         val writeCheck = ContextCompat.checkSelfPermission(this,
@@ -64,25 +75,40 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION)
         val coarseLocationCheck = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION)
+
+
+        var file:File =  File(dir, "map.mbtiles")
+        var mapOutput:FileOutputStream = FileOutputStream(file)
+        var mapInput=ctx.getAssets().open("map.mbtiles");
+        val buffer = ByteArray(mapInput.available())
+        mapInput.read(buffer)
+        mapOutput.write(buffer)
+        var file2:File =  File(dir, "urbana_map.mbtiles")
+        var mapOutput2:FileOutputStream = FileOutputStream(file2)
+        var mapInput2=ctx.getAssets().open("urbana_map.mbtiles");
+        val buffer2 = ByteArray(mapInput2.available())
+        mapInput2.read(buffer2)
+        mapOutput2.write(buffer2)
         setSupportActionBar(toolbar)
         val mapController = map.controller
         mapController.setZoom(14)
-        val startPoint = GeoPoint(40.1106, -88.2073)
+        val startPoint = GeoPoint(MAP_DEFAULT_LATITUDE, MAP_DEFAULT_LONGITUDE)
         mapController.setCenter(startPoint)
+        var mTiles= MapTileProviderBasic(ctx)
+        mTiles.setTileSource(TileSourceFactory.MAPNIK)
+        mTilesOverlay=TilesOverlay(mTiles,baseContext)
+        mTilesOverlay?.setLoadingBackgroundColor(Color.TRANSPARENT)
+
+        map.overlays.add(mTilesOverlay)
         mLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(ctx), map)
         mLocationOverlay?.enableMyLocation()
         mLocationOverlay?.enableFollowLocation()
         mLocationOverlay?.runOnFirstFix(Runnable { mapController.animateTo(mLocationOverlay?.getMyLocation()) })
-        map.getOverlays().add(mLocationOverlay)
+        map.overlays.add(mLocationOverlay)
         compassOverlay = CompassOverlay(this, map)
         compassOverlay?.enableCompass()
-        map.getOverlays().add(compassOverlay)
+        map.overlays.add(compassOverlay)
 
-
-
-        val locationManager:LocationManager=getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-        var location:Location?=null
 
 
     }
