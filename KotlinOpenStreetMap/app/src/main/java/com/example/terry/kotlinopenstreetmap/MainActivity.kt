@@ -17,24 +17,20 @@ import kotlinx.android.synthetic.main.activity_main.*
 import android.preference.PreferenceManager
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
-import org.osmdroid.api.IMapController
+
 import android.Manifest.permission
-import android.Manifest.permission.WRITE_CALENDAR
+
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.location.Location
-import android.location.LocationManager
 import android.os.Environment
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import org.osmdroid.tileprovider.MapTileProviderBasic
-import org.osmdroid.tileprovider.tilesource.XYTileSource
+
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
-import org.osmdroid.views.overlay.ItemizedIconOverlay;
-import org.osmdroid.views.overlay.ItemizedOverlay
-import org.osmdroid.views.overlay.OverlayItem;
+
 import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import java.io.File
@@ -59,9 +55,9 @@ class MainActivity : AppCompatActivity() {
     private var mLocationOverlay:MyLocationNewOverlay ?=null
     private var compassOverlay:CompassOverlay?=null
     private var mTilesOverlay:TilesOverlay?=null
-    private var MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE=0
-    private var MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION=0
-    private var MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION=0
+    private var MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE=PackageManager.PERMISSION_DENIED
+    private var MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION=PackageManager.PERMISSION_DENIED
+    private var MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION=PackageManager.PERMISSION_DENIED
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val ctx = applicationContext
@@ -74,59 +70,49 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this,
                      Array<String>(1){Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE)
+        else
+            MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE=PackageManager.PERMISSION_GRANTED
         if( ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 !=PackageManager.PERMISSION_GRANTED)
             ActivityCompat.requestPermissions(this,
                     Array<String>(1){Manifest.permission.ACCESS_FINE_LOCATION},
                     MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+        else
+            MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION=PackageManager.PERMISSION_GRANTED
         if( ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION)
                 !=PackageManager.PERMISSION_GRANTED)
             ActivityCompat.requestPermissions(this,
                     Array<String>(1){Manifest.permission.ACCESS_COARSE_LOCATION},
                     MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION)
-        val sdCard:File = Environment.getExternalStorageDirectory();
-        var dir :File = File (sdCard.getAbsolutePath() + "/osmdroid/")
-        dir.mkdirs()
-        Configuration.getInstance().setOsmdroidBasePath(dir)
+        else
+            MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION=PackageManager.PERMISSION_GRANTED
+        if(MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE==PackageManager.PERMISSION_GRANTED) {
+            transferFiles(ctx, "map.mbtiles", "map.mbtiles")
+            transferFiles(ctx, "urbana_map.mbtiles", "urbana_map.mbtiles")
+        }
 
         setContentView(R.layout.activity_main)
-
-
-
-        var file:File =  File(""+dir +"/map.mbtiles")
-        if(!file.exists())
-                file.createNewFile()
-        var mapOutput:FileOutputStream = FileOutputStream(file)
-        var mapInput=ctx.getAssets().open("map.mbtiles");
-        val buffer = ByteArray(mapInput.available())
-        mapInput.read(buffer)
-        mapOutput.write(buffer)
-        var file2:File =  File(dir, "urbana_map.mbtiles")
-        if(!file2.exists())
-            file2.createNewFile()
-        var mapOutput2:FileOutputStream = FileOutputStream(file2)
-        var mapInput2=ctx.getAssets().open("urbana_map.mbtiles");
-        val buffer2 = ByteArray(mapInput2.available())
-        mapInput2.read(buffer2)
-        mapOutput2.write(buffer2)
         setSupportActionBar(toolbar)
+        //Intialize MapView and set zoom and inital starting location
         val mapController = map.controller
         mapController.setZoom(14)
         val startPoint = GeoPoint(MAP_DEFAULT_LATITUDE, MAP_DEFAULT_LONGITUDE)
         mapController.setCenter(startPoint)
+        //Set tiles to be provided by either files if exist or cache or server, from MAPNIK
         var mTiles= MapTileProviderBasic(ctx)
         mTiles.setTileSource(TileSourceFactory.MAPNIK)
         mTilesOverlay=TilesOverlay(mTiles,baseContext)
         mTilesOverlay?.setLoadingBackgroundColor(Color.TRANSPARENT)
-
         map.overlays.add(mTilesOverlay)
+        //Show user location and go to location on first find
         mLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(ctx), map)
         mLocationOverlay?.enableMyLocation()
         mLocationOverlay?.enableFollowLocation()
         mLocationOverlay?.runOnFirstFix(Runnable { mapController.animateTo(mLocationOverlay?.getMyLocation()) })
         map.overlays.add(mLocationOverlay)
+        //Add a compass overlay
         compassOverlay = CompassOverlay(this, map)
         compassOverlay?.enableCompass()
         map.overlays.add(compassOverlay)
@@ -170,5 +156,25 @@ class MainActivity : AppCompatActivity() {
         } else super.onOptionsItemSelected(item)
 
     }
+    //retrieves files from assest and puts them in the external storage
+    companion object {
+
+
+    fun transferFiles(ctx:Context, input:String,output:String) {
+        val sdCard: File = Environment.getExternalStorageDirectory();
+        var dir: File = File(sdCard.getAbsolutePath() + "/osmdroid/")
+        dir.mkdirs()
+        Configuration.getInstance().setOsmdroidBasePath(dir)
+        var file: File = File("" + dir + "/" + output)
+        if (!file.exists())
+            file.createNewFile()
+        var mapOutput: FileOutputStream = FileOutputStream(file)
+        var mapInput = ctx.getAssets().open(input);
+        val buffer = ByteArray(mapInput.available())
+        mapInput.read(buffer)
+        mapOutput.write(buffer)
+    }
+    }
+
 
 }
