@@ -90,7 +90,6 @@ class MainActivity : AppCompatActivity() {
             MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION=PackageManager.PERMISSION_GRANTED
         if(MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE==PackageManager.PERMISSION_GRANTED) {
             transferFiles(ctx, "map.mbtiles", "map.mbtiles")
-            transferFiles(ctx, "urbana_map.mbtiles", "urbana_map.mbtiles")
         }
 
         setContentView(R.layout.activity_main)
