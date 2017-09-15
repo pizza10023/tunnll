@@ -1,4 +1,4 @@
-#KotlinOpenStreetMap
+# KotlinOpenStreetMap
 This app is ran mostly by utilizing the library osmdroid (https://github.com/osmdroid/osmdroid).
 
 When the app first starts it may ask for location and external storage writing permssions.
